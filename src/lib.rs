@@ -7,22 +7,33 @@ use software_archive::SoftwareArchive;
 mod reporting;
 use reporting::UpdateError;
 
+use crate::{memory::LogicalBlockWriter, reporting::LogicalBlockError};
+
 pub fn update_software(
     memory_mapping: MemoryMapping,
     mut new_software_archive: SoftwareArchive,
 ) -> Result<(), UpdateError> {
     for logical_block in new_software_archive.get_logical_blocks() {
-        let logical_block_destination =
-            memory_mapping.get_logical_block_location(&logical_block)?;
-        let mut logical_block_reader =
-            new_software_archive.get_logical_block_reader(&logical_block);
+        let logical_block_destination = memory_mapping.get_logical_block_writer(&logical_block)?;
+        let logical_block_reader = new_software_archive.get_logical_block_reader(&logical_block);
+
+        let mut logical_block_writer =
+            LogicalBlockWriter::from(logical_block_reader, logical_block_destination)?;
 
         println!(
             "Copy: {:#?}\nIn: {:#?}",
-            logical_block, logical_block_destination
+            logical_block,
+            logical_block_writer.get_destination()
         );
 
-        logical_block_destination.write(&mut logical_block_reader)?;
+        let bytes_count = logical_block_writer.write()?;
+
+        if bytes_count != logical_block_writer.get_size() {
+            return Err(UpdateError::LogicalBlockSize(LogicalBlockError {
+                logical_block_id: logical_block.get_id(),
+                description: "todo!()".to_string(),
+            }));
+        }
     }
     Ok(())
 }

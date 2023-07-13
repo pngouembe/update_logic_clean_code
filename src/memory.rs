@@ -50,41 +50,102 @@ pub struct LogicalBlockLocation {
 }
 
 impl LogicalBlockLocation {
-    pub fn write(&self, logical_block_reader: &mut LogicalBlockReader) -> Result<(), UpdateError> {
-        let mut file = File::options().write(true).open(&self.path).unwrap();
-        file.seek(std::io::SeekFrom::Start(self.offset)).unwrap();
+    pub fn get_size(&self) -> usize {
+        self.size
+    }
+}
 
-        self.recursive_copy_to_file(&mut file, logical_block_reader)
+pub struct LogicalBlockWriter<'a> {
+    logical_block_destination: LogicalBlockLocation,
+    logical_block_reader: LogicalBlockReader<'a>,
+    destination_file: File,
+}
+
+impl<'a> LogicalBlockWriter<'a> {
+    pub fn from(
+        logical_block_reader: LogicalBlockReader<'a>,
+        logical_block_destination: LogicalBlockLocation,
+    ) -> Result<LogicalBlockWriter<'a>, UpdateError> {
+        let mut file = File::options()
+            .write(true)
+            .open(&logical_block_destination.path)
+            .unwrap();
+        file.seek(std::io::SeekFrom::Start(logical_block_destination.offset))
+            .unwrap();
+
+        Ok(LogicalBlockWriter {
+            logical_block_destination,
+            logical_block_reader,
+            destination_file: file,
+        })
     }
 
-    fn recursive_copy_to_file(
-        &self,
-        file: &mut File,
-        logical_block_reader: &mut LogicalBlockReader,
-    ) -> Result<(), UpdateError> {
+    pub fn get_size(&self) -> usize {
+        self.logical_block_destination.get_size()
+    }
+
+    pub fn get_destination(&self) -> LogicalBlockLocation {
+        self.logical_block_destination.clone()
+    }
+
+    pub fn write(&mut self) -> Result<usize, UpdateError> {
+        self.recursive_copy_to_file()
+    }
+
+    fn recursive_copy_to_file(&mut self) -> Result<usize, UpdateError> {
         let mut read_buffer = [0; 4096];
+        let mut total_copied_bytes = 0;
 
         loop {
-            match logical_block_reader.read(&mut read_buffer) {
-                Ok(0) => break, // finished reading
-                Ok(bytes_count) => {
-                    let written_bytes_count = file.write(&read_buffer[..bytes_count]).unwrap();
-                    if written_bytes_count != bytes_count {
-                        return Err(UpdateError::LogicalBlockWriteError(LogicalBlockError {
-                            logical_block_id: logical_block_reader.get_logical_block_id(),
-                            description: "todo!()".to_string(),
-                        }));
-                    }
-                }
-                Err(_) => {
-                    return Err(UpdateError::LogicalBlockWriteError(LogicalBlockError {
-                        logical_block_id: logical_block_reader.get_logical_block_id(),
-                        description: "todo!()".to_string(),
-                    }))
-                }
+            let copied_bytes_count = self.copy_chunk(&mut read_buffer)?;
+            if copied_bytes_count == 0 {
+                break;
+            } else {
+                total_copied_bytes += copied_bytes_count;
             }
         }
-        Ok(())
+
+        Ok(total_copied_bytes)
+    }
+
+    fn copy_chunk(&mut self, chunk_buffer: &mut [u8]) -> Result<usize, UpdateError> {
+        let read_bytes = self.read_chunk_from_logical_block(chunk_buffer)?;
+
+        let written_bytes = self.write_chunk_to_destination(&mut chunk_buffer[..read_bytes])?;
+
+        match written_bytes == read_bytes {
+            true => Ok(written_bytes),
+            false => Err(UpdateError::LogicalBlockWrite(LogicalBlockError {
+                logical_block_id: self.logical_block_reader.get_logical_block_id(),
+                description: "todo!()".to_string(),
+            })),
+        }
+    }
+
+    fn read_chunk_from_logical_block(
+        &mut self,
+        chunk_buffer: &mut [u8],
+    ) -> Result<usize, UpdateError> {
+        match self.logical_block_reader.read(chunk_buffer) {
+            Ok(n) => Ok(n),
+            Err(_) => Err(UpdateError::LogicalBlockRead(LogicalBlockError {
+                logical_block_id: self.logical_block_reader.get_logical_block_id(),
+                description: "todo!()".to_string(),
+            })),
+        }
+    }
+
+    fn write_chunk_to_destination(
+        &mut self,
+        chunk_buffer: &mut [u8],
+    ) -> Result<usize, UpdateError> {
+        match self.destination_file.write(chunk_buffer) {
+            Ok(n) => Ok(n),
+            Err(_) => Err(UpdateError::LogicalBlockWrite(LogicalBlockError {
+                logical_block_id: self.logical_block_reader.get_logical_block_id(),
+                description: "todo!()".to_string(),
+            })),
+        }
     }
 }
 pub struct MemoryMapping {
@@ -113,14 +174,14 @@ impl MemoryMapping {
         })
     }
 
-    pub fn get_logical_block_location(
+    pub fn get_logical_block_writer(
         &self,
         logical_block: &software_archive::LogicalBlock,
     ) -> Result<LogicalBlockLocation, UpdateError> {
         if let Some(location) = self.logical_blocks.get(&logical_block.get_id()) {
             Ok(location.clone())
         } else {
-            Err(UpdateError::MissingLogicalBlockError(LogicalBlockError {
+            Err(UpdateError::MissingLogicalBlock(LogicalBlockError {
                 logical_block_id: logical_block.get_id(),
                 description: "todo!()".to_string(),
             }))

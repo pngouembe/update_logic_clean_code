@@ -1,7 +1,9 @@
 #[derive(Debug)]
 pub enum UpdateError {
-    LogicalBlockWriteError(LogicalBlockError),
-    MissingLogicalBlockError(LogicalBlockError),
+    LogicalBlockWrite(LogicalBlockError),
+    LogicalBlockRead(LogicalBlockError),
+    MissingLogicalBlock(LogicalBlockError),
+    LogicalBlockSize(LogicalBlockError),
 }
 
 #[derive(Debug)]
