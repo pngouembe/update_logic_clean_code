@@ -176,7 +176,7 @@ impl MemoryMapping {
 
     pub fn get_logical_block_writer(
         &self,
-        logical_block: &software_archive::LogicalBlock,
+        logical_block: &software_archive::LogicalBlockInfo,
     ) -> Result<LogicalBlockLocation, UpdateError> {
         if let Some(location) = self.logical_blocks.get(&logical_block.get_id()) {
             Ok(location.clone())

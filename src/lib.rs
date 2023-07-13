@@ -13,16 +13,18 @@ pub fn update_software(
     memory_mapping: MemoryMapping,
     mut new_software_archive: SoftwareArchive,
 ) -> Result<(), UpdateError> {
-    for logical_block in new_software_archive.get_logical_blocks() {
-        let logical_block_destination = memory_mapping.get_logical_block_writer(&logical_block)?;
-        let logical_block_reader = new_software_archive.get_logical_block_reader(&logical_block);
+    for logical_block_info in new_software_archive.get_logical_blocks_info() {
+        let logical_block_reader =
+            new_software_archive.get_logical_block_reader(&logical_block_info);
+        let logical_block_destination =
+            memory_mapping.get_logical_block_writer(&logical_block_info)?;
 
         let mut logical_block_writer =
             LogicalBlockWriter::from(logical_block_reader, logical_block_destination)?;
 
         println!(
             "Copy: {:#?}\nIn: {:#?}",
-            logical_block,
+            logical_block_info,
             logical_block_writer.get_destination()
         );
 
@@ -30,7 +32,7 @@ pub fn update_software(
 
         if bytes_count != logical_block_writer.get_size() {
             return Err(UpdateError::LogicalBlockSize(LogicalBlockError {
-                logical_block_id: logical_block.get_id(),
+                logical_block_id: logical_block_info.get_id(),
                 description: "todo!()".to_string(),
             }));
         }

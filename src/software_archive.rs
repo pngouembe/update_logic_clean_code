@@ -7,19 +7,19 @@ use crate::reporting::UpdateError;
 const MANIFEST_XML_NAMESPACE: &str = "logical_blocks";
 
 #[derive(Debug, Clone)]
-pub struct LogicalBlock {
+pub struct LogicalBlockInfo {
     id: String,
     name: String,
     signature: String,
     path_in_archive: String,
 }
-impl LogicalBlock {
+impl LogicalBlockInfo {
     pub(crate) fn get_id(&self) -> String {
         self.id.clone()
     }
 }
 
-impl fmt::Display for LogicalBlock {
+impl fmt::Display for LogicalBlockInfo {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -30,7 +30,7 @@ impl fmt::Display for LogicalBlock {
 }
 
 pub struct LogicalBlockReader<'a> {
-    logical_block: LogicalBlock,
+    logical_block: LogicalBlockInfo,
     file: ZipFile<'a>,
 }
 
@@ -55,7 +55,7 @@ impl<'a> fmt::Display for LogicalBlockReader<'a> {
 #[derive(Debug)]
 pub struct SoftwareArchive {
     archive: ZipArchive<File>,
-    logical_blocks: Vec<LogicalBlock>,
+    logical_blocks: Vec<LogicalBlockInfo>,
 }
 
 impl SoftwareArchive {
@@ -138,7 +138,7 @@ impl SoftwareArchive {
                 .unwrap()
                 .text();
 
-            self.logical_blocks.push(LogicalBlock {
+            self.logical_blocks.push(LogicalBlockInfo {
                 id,
                 name,
                 signature,
@@ -150,7 +150,7 @@ impl SoftwareArchive {
 
     pub(crate) fn get_logical_block_reader(
         &mut self,
-        logical_block: &LogicalBlock,
+        logical_block: &LogicalBlockInfo,
     ) -> LogicalBlockReader<'_> {
         LogicalBlockReader {
             logical_block: logical_block.clone(),
@@ -161,7 +161,7 @@ impl SoftwareArchive {
         }
     }
 
-    pub fn get_logical_blocks(&self) -> Vec<LogicalBlock> {
+    pub fn get_logical_blocks_info(&self) -> Vec<LogicalBlockInfo> {
         self.logical_blocks.to_vec()
     }
 }
@@ -174,7 +174,7 @@ mod tests {
     fn real_archive_test() {
         let archive = SoftwareArchive::from("./resources/test/update_folder.zip").unwrap();
 
-        for logical_block in archive.get_logical_blocks() {
+        for logical_block in archive.get_logical_blocks_info() {
             println!("{}", logical_block)
         }
     }
