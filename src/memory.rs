@@ -50,6 +50,14 @@ pub struct LogicalBlockLocation {
 }
 
 impl LogicalBlockLocation {
+    pub fn get_path(&self) -> &str {
+        self.path.as_ref()
+    }
+
+    pub fn get_offset(&self) -> u64 {
+        self.offset
+    }
+
     pub fn get_size(&self) -> usize {
         self.size
     }

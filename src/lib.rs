@@ -7,6 +7,9 @@ use software_archive::SoftwareArchive;
 mod reporting;
 use reporting::UpdateError;
 
+mod crypto;
+use crypto::LogicalBlockVerifier;
+
 use crate::{memory::LogicalBlockWriter, reporting::LogicalBlockError};
 
 pub fn update_software(
@@ -19,23 +22,33 @@ pub fn update_software(
         let logical_block_destination =
             memory_mapping.get_logical_block_writer(&logical_block_info)?;
 
-        let mut logical_block_writer =
-            LogicalBlockWriter::from(logical_block_reader, logical_block_destination)?;
+        {
+            let mut logical_block_writer =
+                LogicalBlockWriter::from(logical_block_reader, logical_block_destination.clone())?;
 
-        println!(
-            "Copy: {:#?}\nIn: {:#?}",
-            logical_block_info,
-            logical_block_writer.get_destination()
-        );
+            println!(
+                "Copy: {:#?}\nIn: {:#?}",
+                logical_block_info,
+                logical_block_writer.get_destination()
+            );
 
-        let bytes_count = logical_block_writer.write()?;
+            let bytes_count = logical_block_writer.write()?;
 
-        if bytes_count != logical_block_writer.get_size() {
-            return Err(UpdateError::LogicalBlockSize(LogicalBlockError {
-                logical_block_id: logical_block_info.get_id(),
-                description: "todo!()".to_string(),
-            }));
+            if bytes_count != logical_block_writer.get_size() {
+                return Err(UpdateError::LogicalBlockSize(LogicalBlockError {
+                    logical_block_id: logical_block_info.get_id(),
+                    description: "todo!()".to_string(),
+                }));
+            }
         }
+
+        let logical_block_verifier =
+            LogicalBlockVerifier::from(logical_block_destination, logical_block_info);
+
+        // TODO: This is broken, fix it
+        // if logical_block_verifier.verify()? == false {
+        //     panic!("Wrong signature")
+        // }
     }
     Ok(())
 }

@@ -4,6 +4,7 @@ pub enum UpdateError {
     LogicalBlockRead(LogicalBlockError),
     MissingLogicalBlock(LogicalBlockError),
     LogicalBlockSize(LogicalBlockError),
+    VerificationError(LogicalBlockError),
 }
 
 #[derive(Debug)]

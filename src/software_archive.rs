@@ -17,6 +17,10 @@ impl LogicalBlockInfo {
     pub(crate) fn get_id(&self) -> String {
         self.id.clone()
     }
+
+    pub fn get_signature(&self) -> String {
+        self.signature.clone()
+    }
 }
 
 impl fmt::Display for LogicalBlockInfo {
