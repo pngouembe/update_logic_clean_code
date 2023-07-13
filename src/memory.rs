@@ -89,10 +89,6 @@ impl<'a> LogicalBlockWriter<'a> {
     }
 
     pub fn write(&mut self) -> Result<usize, UpdateError> {
-        self.recursive_copy_to_file()
-    }
-
-    fn recursive_copy_to_file(&mut self) -> Result<usize, UpdateError> {
         let mut read_buffer = [0; 4096];
         let mut total_copied_bytes = 0;
 
