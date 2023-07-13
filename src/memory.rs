@@ -68,7 +68,13 @@ impl LogicalBlockLocation {
             match logical_block_reader.read(&mut read_buffer) {
                 Ok(0) => break, // finished reading
                 Ok(bytes_count) => {
-                    file.write(&read_buffer[..bytes_count]).unwrap();
+                    let written_bytes_count = file.write(&read_buffer[..bytes_count]).unwrap();
+                    if written_bytes_count != bytes_count {
+                        return Err(UpdateError::LogicalBlockWriteError(LogicalBlockError {
+                            logical_block_id: logical_block_reader.get_logical_block_id(),
+                            description: "todo!()".to_string(),
+                        }));
+                    }
                 }
                 Err(_) => {
                     return Err(UpdateError::LogicalBlockWriteError(LogicalBlockError {
@@ -112,12 +118,12 @@ impl MemoryMapping {
         logical_block: &software_archive::LogicalBlock,
     ) -> Result<LogicalBlockLocation, UpdateError> {
         if let Some(location) = self.logical_blocks.get(&logical_block.get_id()) {
-            return Ok(location.clone());
+            Ok(location.clone())
         } else {
-            return Err(UpdateError::MissingLogicalBlockError(LogicalBlockError {
+            Err(UpdateError::MissingLogicalBlockError(LogicalBlockError {
                 logical_block_id: logical_block.get_id(),
                 description: "todo!()".to_string(),
-            }));
+            }))
         }
     }
 

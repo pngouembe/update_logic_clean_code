@@ -63,7 +63,7 @@ impl SoftwareArchive {
         let zipfile = File::open(archive_path).unwrap();
         let archive = ZipArchive::new(zipfile).unwrap();
         let mut archive = SoftwareArchive {
-            archive: archive,
+            archive,
             logical_blocks: vec![],
         };
 
@@ -92,7 +92,7 @@ impl SoftwareArchive {
     }
 
     fn get_manifest(&mut self, index: &minidom::Element) -> Result<minidom::Element, UpdateError> {
-        let manifest_path = self.get_manifest_path_from_index(&index)?;
+        let manifest_path = self.get_manifest_path_from_index(index)?;
         let manifest = self.get_file_content(&manifest_path)?;
         let manifest = manifest.parse().unwrap();
         Ok(manifest)
@@ -139,10 +139,10 @@ impl SoftwareArchive {
                 .text();
 
             self.logical_blocks.push(LogicalBlock {
-                id: id,
-                name: name,
-                signature: signature,
-                path_in_archive: path_in_archive,
+                id,
+                name,
+                signature,
+                path_in_archive,
             });
         }
         Ok(())
