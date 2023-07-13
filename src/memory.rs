@@ -2,11 +2,14 @@ use serde::Deserialize;
 use std::{
     collections::HashMap,
     fs::File,
-    io::{copy, Read, Seek, Write},
+    io::{Read, Seek, Write},
 };
 
-use crate::reporting::UpdateError;
 use crate::software_archive;
+use crate::{
+    reporting::{LogicalBlockError, UpdateError},
+    software_archive::LogicalBlockReader,
+};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct LogicalBlockCfg {
@@ -47,31 +50,32 @@ pub struct LogicalBlockLocation {
 }
 
 impl LogicalBlockLocation {
-    pub fn write(
-        &self,
-        logical_block: &mut software_archive::LogicalBlock,
-    ) -> Result<(), UpdateError> {
+    pub fn write(&self, logical_block_reader: &mut LogicalBlockReader) -> Result<(), UpdateError> {
         let mut file = File::options().write(true).open(&self.path).unwrap();
         file.seek(std::io::SeekFrom::Start(self.offset)).unwrap();
-        println!("Copy: {}\nTo: {:#?}", logical_block, self);
 
-        self.recursive_copy_to_file(&mut file, logical_block)
+        self.recursive_copy_to_file(&mut file, logical_block_reader)
     }
 
     fn recursive_copy_to_file(
         &self,
         file: &mut File,
-        logical_block: &mut software_archive::LogicalBlock,
+        logical_block_reader: &mut LogicalBlockReader,
     ) -> Result<(), UpdateError> {
         let mut read_buffer = [0; 4096];
 
         loop {
-            match logical_block.read(&mut read_buffer) {
+            match logical_block_reader.read(&mut read_buffer) {
                 Ok(0) => break, // finished reading
                 Ok(bytes_count) => {
                     file.write(&read_buffer[..bytes_count]).unwrap();
                 }
-                Err(_) => return Err(UpdateError),
+                Err(_) => {
+                    return Err(UpdateError::LogicalBlockWriteError(LogicalBlockError {
+                        logical_block_id: logical_block_reader.get_logical_block_id(),
+                        description: "todo!()".to_string(),
+                    }))
+                }
             }
         }
         Ok(())
@@ -110,7 +114,10 @@ impl MemoryMapping {
         if let Some(location) = self.logical_blocks.get(&logical_block.get_id()) {
             return Ok(location.clone());
         } else {
-            return Err(UpdateError);
+            return Err(UpdateError::MissingLogicalBlockError(LogicalBlockError {
+                logical_block_id: logical_block.get_id(),
+                description: "todo!()".to_string(),
+            }));
         }
     }
 

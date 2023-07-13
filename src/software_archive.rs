@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fmt, fs::File, io::Read, rc::Rc};
+use std::{fmt, fs::File, io::Read};
 
 use zip::{read::ZipFile, ZipArchive};
 
@@ -6,12 +6,11 @@ use crate::reporting::UpdateError;
 
 const MANIFEST_XML_NAMESPACE: &str = "logical_blocks";
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LogicalBlock {
     id: String,
     name: String,
     signature: String,
-    archive: Rc<RefCell<ZipArchive<File>>>,
     path_in_archive: String,
 }
 impl LogicalBlock {
@@ -30,21 +29,32 @@ impl fmt::Display for LogicalBlock {
     }
 }
 
-impl Read for LogicalBlock {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        let mut archive = self.archive.borrow_mut();
-        let mut file = archive.by_name(&self.path_in_archive).unwrap();
+pub struct LogicalBlockReader<'a> {
+    logical_block: LogicalBlock,
+    file: ZipFile<'a>,
+}
 
-        panic!(
-            "This doesn't work as the file is read from start each time, this should be reworked"
-        );
-        file.read(buf)
+impl<'a> LogicalBlockReader<'a> {
+    pub(crate) fn get_logical_block_id(&self) -> String {
+        self.logical_block.get_id()
+    }
+}
+
+impl<'a> Read for LogicalBlockReader<'a> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        self.file.read(buf)
+    }
+}
+
+impl<'a> fmt::Display for LogicalBlockReader<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logical_block.fmt(f)
     }
 }
 
 #[derive(Debug)]
 pub struct SoftwareArchive {
-    archive: Rc<RefCell<ZipArchive<File>>>,
+    archive: ZipArchive<File>,
     logical_blocks: Vec<LogicalBlock>,
 }
 
@@ -53,7 +63,7 @@ impl SoftwareArchive {
         let zipfile = File::open(archive_path).unwrap();
         let archive = ZipArchive::new(zipfile).unwrap();
         let mut archive = SoftwareArchive {
-            archive: Rc::new(RefCell::new(archive)),
+            archive: archive,
             logical_blocks: vec![],
         };
 
@@ -75,8 +85,7 @@ impl SoftwareArchive {
     }
 
     fn get_file_content(&mut self, relative_path: &str) -> Result<String, UpdateError> {
-        let mut archive = self.archive.borrow_mut();
-        let mut file = archive.by_name(relative_path).unwrap();
+        let mut file = self.archive.by_name(relative_path).unwrap();
         let mut file_content = String::new();
         file.read_to_string(&mut file_content).unwrap();
         Ok(file_content)
@@ -133,20 +142,27 @@ impl SoftwareArchive {
                 id: id,
                 name: name,
                 signature: signature,
-                archive: Rc::clone(&self.archive),
                 path_in_archive: path_in_archive,
             });
         }
         Ok(())
     }
-}
 
-impl IntoIterator for SoftwareArchive {
-    type Item = LogicalBlock;
-    type IntoIter = <Vec<Self::Item> as IntoIterator>::IntoIter;
+    pub(crate) fn get_logical_block_reader(
+        &mut self,
+        logical_block: &LogicalBlock,
+    ) -> LogicalBlockReader<'_> {
+        LogicalBlockReader {
+            logical_block: logical_block.clone(),
+            file: self
+                .archive
+                .by_name(&logical_block.path_in_archive)
+                .unwrap(),
+        }
+    }
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.logical_blocks.into_iter()
+    pub fn get_logical_blocks(&self) -> Vec<LogicalBlock> {
+        self.logical_blocks.to_vec()
     }
 }
 
@@ -158,7 +174,7 @@ mod tests {
     fn real_archive_test() {
         let archive = SoftwareArchive::from("./resources/test/update_folder.zip").unwrap();
 
-        for logical_block in archive {
+        for logical_block in archive.get_logical_blocks() {
             println!("{}", logical_block)
         }
     }
