@@ -42,6 +42,10 @@ impl<'a> LogicalBlockReader<'a> {
     pub(crate) fn get_logical_block_id(&self) -> String {
         self.logical_block.get_id()
     }
+
+    pub fn get_logical_block_info(&self) -> &LogicalBlockInfo {
+        &self.logical_block
+    }
 }
 
 impl<'a> Read for LogicalBlockReader<'a> {
