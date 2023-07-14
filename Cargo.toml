@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+base64 = "0.21.2"
 minidom = "0.15.1"
 openssl = { version = "0.10.46", features = ["v111"] }
 serde = { version = "1.0.154", features = ["derive"] }

@@ -45,10 +45,9 @@ pub fn update_software(
         let logical_block_verifier =
             LogicalBlockVerifier::from(logical_block_destination, logical_block_info);
 
-        // TODO: This is broken, fix it
-        // if logical_block_verifier.verify()? == false {
-        //     panic!("Wrong signature")
-        // }
+        if !(logical_block_verifier.verify()?) {
+            panic!("Wrong signature")
+        }
     }
     Ok(())
 }

@@ -65,7 +65,11 @@ impl LogicalBlockVerifier {
             let remaining_bytes = total_bytes_to_read - total_bytes_read;
 
             if remaining_bytes == 0 {
-                match verifier.verify(self.logical_block_info.get_signature().as_bytes()) {
+                let decoded_signature = general_purpose::STANDARD
+                    .decode(self.logical_block_info.get_signature())
+                    .unwrap();
+
+                match verifier.verify(&decoded_signature) {
                     Ok(n) => return Ok(n),
                     Err(_) => {
                         return Err(UpdateError::VerificationError(LogicalBlockError {
