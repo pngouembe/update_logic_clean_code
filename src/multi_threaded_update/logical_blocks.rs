@@ -4,6 +4,14 @@ use std::{
     io::{Read, Seek, Write},
 };
 
+use base64::{engine::general_purpose, Engine};
+use openssl::{
+    hash::MessageDigest,
+    pkey::{PKey, Public},
+    rsa::Padding,
+    sign::{RsaPssSaltlen, Verifier},
+};
+
 use crate::{
     multi_threaded_update::memory::LogicalBlockDestination,
     reporting::{LogicalBlockError, UpdateError},
@@ -93,6 +101,86 @@ impl<'a> LogicalBlock<'a> {
                 logical_block_id: self.id.clone(),
                 description: "todo!()".to_string(),
             })),
+        }
+    }
+
+    pub(crate) fn verify(&self) -> Result<bool, UpdateError> {
+        let public_key = self.get_public_key()?;
+        let mut verifier = self.get_verifier(&public_key)?;
+
+        self.update_verifier_with_logical_block_content(&mut verifier)?;
+
+        let decoded_signature = general_purpose::STANDARD.decode(&self.signature).unwrap();
+
+        match verifier.verify(&decoded_signature) {
+            Ok(n) => Ok(n),
+            Err(_) => Err(UpdateError::VerificationError(LogicalBlockError {
+                logical_block_id: self.id.clone(),
+                description: "todo!()".to_string(),
+            })),
+        }
+    }
+
+    fn get_public_key(&self) -> Result<PKey<Public>, UpdateError> {
+        let mut public_key = Vec::new();
+        File::open("./resources/test/test_public_key.pem")
+            .unwrap()
+            .read_to_end(&mut public_key)
+            .unwrap();
+        Ok(PKey::public_key_from_pem(&public_key).unwrap())
+    }
+
+    fn get_verifier(&'a self, public_key: &'a PKey<Public>) -> Result<Verifier<'a>, UpdateError> {
+        let mut verifier = Verifier::new(MessageDigest::sha256(), public_key).unwrap();
+
+        verifier.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
+        verifier
+            .set_rsa_pss_saltlen(RsaPssSaltlen::custom(0))
+            .unwrap();
+
+        verifier.set_rsa_mgf1_md(MessageDigest::sha256()).unwrap();
+        Ok(verifier)
+    }
+
+    fn update_verifier_with_logical_block_content(
+        &self,
+        verifier: &mut Verifier<'_>,
+    ) -> Result<(), UpdateError> {
+        let mut file = File::open(&self.destination.get_path()).unwrap();
+        file.seek(std::io::SeekFrom::Start(self.destination.get_offset()))
+            .unwrap();
+
+        const CHUNK_SIZE: usize = 4096;
+        let mut read_buffer = [0; CHUNK_SIZE];
+
+        let total_bytes_to_read = self.destination.get_size();
+        let mut total_bytes_read = 0;
+
+        loop {
+            let remaining_bytes = total_bytes_to_read - total_bytes_read;
+
+            if remaining_bytes == 0 {
+                return Ok(());
+            }
+
+            let bytes_to_read = if remaining_bytes >= CHUNK_SIZE {
+                CHUNK_SIZE
+            } else {
+                remaining_bytes
+            };
+
+            match file.read_exact(&mut read_buffer[..bytes_to_read]) {
+                Ok(_) => {
+                    verifier.update(&read_buffer[..bytes_to_read]).unwrap();
+                    total_bytes_read += bytes_to_read;
+                }
+                Err(_) => {
+                    return Err(UpdateError::LogicalBlockRead(LogicalBlockError {
+                        logical_block_id: self.id.clone(),
+                        description: "todo!()".to_string(),
+                    }))
+                }
+            }
         }
     }
 }

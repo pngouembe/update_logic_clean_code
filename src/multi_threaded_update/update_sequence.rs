@@ -19,10 +19,11 @@ mod tests {
 
     #[test]
     fn multi_threaded_update_test() {
-        multi_threaded_update(
+        let result = multi_threaded_update(
             "./resources/test/test_lb_cfg.json",
             "./resources/test/update_folder.zip",
-        )
-        .unwrap();
+        );
+
+        assert_eq!(result, Ok(()))
     }
 }

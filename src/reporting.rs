@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum UpdateError {
     LogicalBlockWrite(LogicalBlockError),
     LogicalBlockRead(LogicalBlockError),
@@ -7,7 +7,7 @@ pub enum UpdateError {
     VerificationError(LogicalBlockError),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct LogicalBlockError {
     pub logical_block_id: String,
     pub description: String,

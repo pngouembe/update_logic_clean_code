@@ -6,7 +6,10 @@ use piz::{
     ZipArchive,
 };
 
-use crate::{multi_threaded_update::memory::MemoryMapping, reporting::UpdateError};
+use crate::{
+    multi_threaded_update::memory::MemoryMapping,
+    reporting::{LogicalBlockError, UpdateError},
+};
 
 use super::logical_blocks::{LogicalBlock, LogicalBlockSource};
 
@@ -183,6 +186,15 @@ impl SoftwareArchive {
     ) -> Result<(), UpdateError> {
         for logical_block in logical_blocks.iter_mut() {
             logical_block.write()?;
+            match logical_block.verify()? {
+                true => return Ok(()),
+                false => {
+                    return Err(UpdateError::VerificationError(LogicalBlockError {
+                        logical_block_id: logical_block.id.clone(),
+                        description: "todo!()".to_string(),
+                    }))
+                }
+            }
         }
         Ok(())
     }
