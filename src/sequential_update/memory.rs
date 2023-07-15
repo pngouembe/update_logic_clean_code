@@ -5,10 +5,10 @@ use std::{
     io::{Read, Seek, Write},
 };
 
-use crate::software_archive;
+use crate::sequential_update::software_archive;
 use crate::{
     reporting::{LogicalBlockError, UpdateError},
-    software_archive::LogicalBlockReader,
+    sequential_update::software_archive::LogicalBlockReader,
 };
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -26,7 +26,7 @@ impl LogicalBlock {
     fn get_location_from_bank(
         &self,
         targeted_bank: &str,
-    ) -> Result<LogicalBlockLocation, UpdateError> {
+    ) -> Result<LogicalBlockDestination, UpdateError> {
         match targeted_bank {
             "bank_a" => Ok(self.destination.bank_a.clone()),
             "bank_b" => Ok(self.destination.bank_b.clone()),
@@ -37,19 +37,19 @@ impl LogicalBlock {
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Banks {
-    pub bank_a: LogicalBlockLocation,
-    pub bank_b: LogicalBlockLocation,
+    pub bank_a: LogicalBlockDestination,
+    pub bank_b: LogicalBlockDestination,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 
-pub struct LogicalBlockLocation {
+pub struct LogicalBlockDestination {
     path: String,
     offset: u64,
     size: usize,
 }
 
-impl LogicalBlockLocation {
+impl LogicalBlockDestination {
     pub fn get_path(&self) -> &str {
         self.path.as_ref()
     }
@@ -64,7 +64,7 @@ impl LogicalBlockLocation {
 }
 
 pub struct LogicalBlockWriter<'a> {
-    logical_block_destination: LogicalBlockLocation,
+    logical_block_destination: LogicalBlockDestination,
     logical_block_reader: LogicalBlockReader<'a>,
     destination_file: File,
 }
@@ -72,7 +72,7 @@ pub struct LogicalBlockWriter<'a> {
 impl<'a> LogicalBlockWriter<'a> {
     pub fn from(
         logical_block_reader: LogicalBlockReader<'a>,
-        logical_block_destination: LogicalBlockLocation,
+        logical_block_destination: LogicalBlockDestination,
     ) -> Result<LogicalBlockWriter<'a>, UpdateError> {
         let mut file = File::options()
             .write(true)
@@ -92,7 +92,7 @@ impl<'a> LogicalBlockWriter<'a> {
         self.logical_block_destination.get_size()
     }
 
-    pub fn get_destination(&self) -> LogicalBlockLocation {
+    pub fn get_destination(&self) -> LogicalBlockDestination {
         self.logical_block_destination.clone()
     }
 
@@ -153,7 +153,7 @@ impl<'a> LogicalBlockWriter<'a> {
     }
 }
 pub struct MemoryMapping {
-    logical_blocks: HashMap<String, LogicalBlockLocation>,
+    logical_blocks: HashMap<String, LogicalBlockDestination>,
 }
 
 impl MemoryMapping {
@@ -181,7 +181,7 @@ impl MemoryMapping {
     pub fn get_logical_block_writer(
         &self,
         logical_block: &software_archive::LogicalBlockInfo,
-    ) -> Result<LogicalBlockLocation, UpdateError> {
+    ) -> Result<LogicalBlockDestination, UpdateError> {
         if let Some(location) = self.logical_blocks.get(&logical_block.get_id()) {
             Ok(location.clone())
         } else {
@@ -190,6 +190,13 @@ impl MemoryMapping {
                 description: "todo!()".to_string(),
             }))
         }
+    }
+
+    pub fn get_logical_block_destination(
+        &self,
+        logical_block_id: &str,
+    ) -> Result<&LogicalBlockDestination, UpdateError> {
+        Ok(self.logical_blocks.get(logical_block_id).unwrap())
     }
 
     fn get_target_bank() -> Result<String, UpdateError> {

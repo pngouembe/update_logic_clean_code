@@ -12,20 +12,20 @@ use openssl::{
 };
 
 use crate::{
-    memory::LogicalBlockLocation,
     reporting::{LogicalBlockError, UpdateError},
-    software_archive::LogicalBlockInfo,
+    sequential_update::memory::LogicalBlockDestination,
+    sequential_update::software_archive::LogicalBlockInfo,
 };
 
 pub struct LogicalBlockVerifier {
-    logical_block: LogicalBlockLocation,
+    logical_block: LogicalBlockDestination,
     logical_block_info: LogicalBlockInfo,
     public_key: PKey<Public>,
 }
 
 impl LogicalBlockVerifier {
     pub fn from(
-        logical_block_location: LogicalBlockLocation,
+        logical_block_location: LogicalBlockDestination,
         logical_block_info: LogicalBlockInfo,
     ) -> LogicalBlockVerifier {
         let public_key = LogicalBlockVerifier::get_public_key();
