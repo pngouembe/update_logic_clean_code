@@ -181,6 +181,7 @@ impl SoftwareArchive {
         &self,
         mut logical_blocks: Vec<LogicalBlock<'_>>,
     ) -> Result<(), UpdateError> {
+        // TODO: Add multi threading here
         for logical_block in logical_blocks.iter_mut() {
             logical_block.write()?;
             logical_block.verify()?;

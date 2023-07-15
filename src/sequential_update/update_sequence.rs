@@ -7,9 +7,13 @@ use crate::sequential_update::software_archive::{
 use crate::{reporting::LogicalBlockError, sequential_update::memory::LogicalBlockWriter};
 
 pub fn sequencial_update(
-    memory_mapping: MemoryMapping,
-    mut new_software_archive: SoftwareArchive,
+    memory_mapping_path: &str,
+    software_archive_path: &str,
 ) -> Result<(), UpdateError> {
+    let mut new_software_archive = SoftwareArchive::from(software_archive_path).unwrap();
+
+    let memory_mapping = MemoryMapping::from(memory_mapping_path).unwrap();
+
     for logical_block_info in new_software_archive.get_logical_blocks_info() {
         let logical_block_reader =
             new_software_archive.get_logical_block_reader(&logical_block_info);
@@ -30,12 +34,6 @@ fn write_logical_block(
     let logical_block_info = logical_block_reader.get_logical_block_info().clone();
     let mut logical_block_writer =
         LogicalBlockWriter::from(logical_block_reader, logical_block_destination.clone())?;
-
-    println!(
-        "Copy: {:#?}\nIn: {:#?}",
-        logical_block_info,
-        logical_block_writer.get_destination()
-    );
 
     let bytes_count = logical_block_writer.write()?;
 
@@ -71,10 +69,11 @@ mod tests {
 
     #[test]
     fn sequencial_update_test() {
-        let archive = SoftwareArchive::from("./resources/test/update_folder.zip").unwrap();
+        let result = sequencial_update(
+            "./resources/test/test_lb_cfg.json",
+            "./resources/test/update_folder.zip",
+        );
 
-        let mapping = MemoryMapping::from("./resources/test/test_lb_cfg.json").unwrap();
-
-        sequencial_update(mapping, archive).unwrap();
+        assert_eq!(result, Ok(()))
     }
 }

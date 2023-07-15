@@ -14,3 +14,10 @@ piz = "0.5.1"
 serde = { version = "1.0.154", features = ["derive"] }
 serde_json = "1.0.94"
 zip = "0.6.4"
+
+[dev-dependencies]
+criterion = { version = "0.5.1", features = ["html_reports"] }
+
+[[bench]]
+name = "update_benchmarks"
+harness = false

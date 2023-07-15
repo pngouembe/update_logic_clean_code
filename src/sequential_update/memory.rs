@@ -92,10 +92,6 @@ impl<'a> LogicalBlockWriter<'a> {
         self.logical_block_destination.get_size()
     }
 
-    pub fn get_destination(&self) -> LogicalBlockDestination {
-        self.logical_block_destination.clone()
-    }
-
     pub fn write(&mut self) -> Result<usize, UpdateError> {
         let mut read_buffer = [0; 4096];
         let mut total_copied_bytes = 0;
@@ -190,13 +186,6 @@ impl MemoryMapping {
                 description: "todo!()".to_string(),
             }))
         }
-    }
-
-    pub fn get_logical_block_destination(
-        &self,
-        logical_block_id: &str,
-    ) -> Result<&LogicalBlockDestination, UpdateError> {
-        Ok(self.logical_blocks.get(logical_block_id).unwrap())
     }
 
     fn get_target_bank() -> Result<String, UpdateError> {
