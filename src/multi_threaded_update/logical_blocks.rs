@@ -36,7 +36,7 @@ impl<'a> LogicalBlock<'a> {
 
         let mut file = File::options()
             .write(true)
-            .open(&self.destination.get_path())
+            .open(self.destination.get_path())
             .unwrap();
         file.seek(std::io::SeekFrom::Start(self.destination.get_offset()))
             .unwrap();
@@ -104,7 +104,7 @@ impl<'a> LogicalBlock<'a> {
         }
     }
 
-    pub(crate) fn verify(&self) -> Result<bool, UpdateError> {
+    pub(crate) fn verify(&self) -> Result<(), UpdateError> {
         let public_key = self.get_public_key()?;
         let mut verifier = self.get_verifier(&public_key)?;
 
@@ -113,7 +113,11 @@ impl<'a> LogicalBlock<'a> {
         let decoded_signature = general_purpose::STANDARD.decode(&self.signature).unwrap();
 
         match verifier.verify(&decoded_signature) {
-            Ok(n) => Ok(n),
+            Ok(true) => Ok(()),
+            Ok(false) => Err(UpdateError::VerificationError(LogicalBlockError {
+                logical_block_id: self.id.clone(),
+                description: "todo!()".to_string(),
+            })),
             Err(_) => Err(UpdateError::VerificationError(LogicalBlockError {
                 logical_block_id: self.id.clone(),
                 description: "todo!()".to_string(),
@@ -146,7 +150,7 @@ impl<'a> LogicalBlock<'a> {
         &self,
         verifier: &mut Verifier<'_>,
     ) -> Result<(), UpdateError> {
-        let mut file = File::open(&self.destination.get_path()).unwrap();
+        let mut file = File::open(self.destination.get_path()).unwrap();
         file.seek(std::io::SeekFrom::Start(self.destination.get_offset()))
             .unwrap();
 

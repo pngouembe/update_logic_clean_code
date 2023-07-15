@@ -56,12 +56,12 @@ fn verify_logical_block(
         LogicalBlockVerifier::from(logical_block_destination, logical_block_info.clone());
 
     if logical_block_verifier.verify()? {
-        return Ok(());
+        Ok(())
     } else {
-        return Err(UpdateError::VerificationError(LogicalBlockError {
+        Err(UpdateError::VerificationError(LogicalBlockError {
             logical_block_id: logical_block_info.get_id(),
             description: "todo!()".to_string(),
-        }));
+        }))
     }
 }
 
