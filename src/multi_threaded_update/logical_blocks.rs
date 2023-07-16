@@ -30,7 +30,7 @@ pub struct LogicalBlockSource<'a> {
 }
 
 impl<'a> LogicalBlock<'a> {
-    pub fn write(&mut self) -> Result<usize, UpdateError> {
+    pub fn write(&mut self) -> Result<(), UpdateError> {
         let mut read_buffer = [0; 4096];
         let mut total_copied_bytes = 0;
 
@@ -50,11 +50,13 @@ impl<'a> LogicalBlock<'a> {
             }
         }
 
-        match total_copied_bytes == self.destination.get_size() {
-            true => Ok(total_copied_bytes),
+        let expected_size = self.destination.get_size();
+
+        match total_copied_bytes == expected_size {
+            true => Ok(()),
             false => Err(UpdateError::LogicalBlockWrite(LogicalBlockError {
                 logical_block_id: self.id.clone(),
-                description: "todo!()".to_string(),
+                description: format!("Number of bytes written ({total_copied_bytes}) doesn't match the expected logical block size ({expected_size})"),
             })),
         }
     }
@@ -72,7 +74,7 @@ impl<'a> LogicalBlock<'a> {
             true => Ok(written_bytes),
             false => Err(UpdateError::LogicalBlockWrite(LogicalBlockError {
                 logical_block_id: self.id.clone(),
-                description: "todo!()".to_string(),
+                description: format!("Chunk copy error: number of bytes read ({read_bytes}) doesn't match the number of bytes written ({written_bytes})"),
             })),
         }
     }
@@ -85,7 +87,7 @@ impl<'a> LogicalBlock<'a> {
             Ok(n) => Ok(n),
             Err(_) => Err(UpdateError::LogicalBlockRead(LogicalBlockError {
                 logical_block_id: self.id.clone(),
-                description: "todo!()".to_string(),
+                description: "Unable to read chunk from source".to_string(),
             })),
         }
     }
@@ -99,7 +101,7 @@ impl<'a> LogicalBlock<'a> {
             Ok(n) => Ok(n),
             Err(_) => Err(UpdateError::LogicalBlockWrite(LogicalBlockError {
                 logical_block_id: self.id.clone(),
-                description: "todo!()".to_string(),
+                description: "Unable to write chunk to destination".to_string(),
             })),
         }
     }
@@ -116,11 +118,15 @@ impl<'a> LogicalBlock<'a> {
             Ok(true) => Ok(()),
             Ok(false) => Err(UpdateError::VerificationError(LogicalBlockError {
                 logical_block_id: self.id.clone(),
-                description: "todo!()".to_string(),
+                description: format!(
+                    "Verification failed: logical block {} doesn't match its signature ({})",
+                    self.id.clone(),
+                    self.signature.clone()
+                ),
             })),
             Err(_) => Err(UpdateError::VerificationError(LogicalBlockError {
                 logical_block_id: self.id.clone(),
-                description: "todo!()".to_string(),
+                description: "Unable to verify signature".to_string(),
             })),
         }
     }
@@ -181,7 +187,7 @@ impl<'a> LogicalBlock<'a> {
                 Err(_) => {
                     return Err(UpdateError::LogicalBlockRead(LogicalBlockError {
                         logical_block_id: self.id.clone(),
-                        description: "todo!()".to_string(),
+                        description: "Unable to read back chunk from destination".to_string(),
                     }))
                 }
             }
