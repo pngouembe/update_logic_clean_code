@@ -5,6 +5,7 @@ use piz::{
     read::{as_tree, FileTree},
     ZipArchive,
 };
+use rayon::prelude::*;
 
 use crate::{multi_threaded_update::memory::MemoryMapping, reporting::UpdateError};
 
@@ -181,11 +182,19 @@ impl SoftwareArchive {
         &self,
         mut logical_blocks: Vec<LogicalBlock<'_>>,
     ) -> Result<(), UpdateError> {
-        // TODO: Add multi threading here
-        for logical_block in logical_blocks.iter_mut() {
-            logical_block.write()?;
-            logical_block.verify()?;
+        let logical_block_failure: Vec<_> = logical_blocks
+            .par_iter_mut()
+            .map(|logical_block| -> Result<(), UpdateError> {
+                logical_block.write()?;
+                logical_block.verify()?;
+                Ok(())
+            })
+            .filter_map(|x| x.err())
+            .collect();
+
+        match logical_block_failure.len() == 0 {
+            true => Ok(()),
+            false => panic!("TODO: Handle errors"),
         }
-        Ok(())
     }
 }

@@ -76,6 +76,8 @@ impl MemoryMapping {
                     map
                 });
 
+        // TODO: Return an error if there is overlapping sections in the mapping
+
         Ok(MemoryMapping {
             logical_blocks: target_bank_mapping,
         })
