@@ -5,14 +5,14 @@
             "id": "FD01",
             "destination": {
                 "bank_a": {
-                    "path": "./mmcblk_a",
+                    "path": "./mtd_a",
                     "offset": 0,
-                    "size": 4045
+                    "size": 130757
                 },
                 "bank_b": {
-                    "path": "./mmcblk_b",
+                    "path": "./mtd_b",
                     "offset": 0,
-                    "size": 4045
+                    "size": 130757
                 }
             }
         },
@@ -22,13 +22,13 @@
             "destination": {
                 "bank_a": {
                     "path": "./mmcblk_a",
-                    "offset": 4096,
-                    "size": 2468
+                    "offset": 131072,
+                    "size": 2357
                 },
                 "bank_b": {
                     "path": "./mmcblk_b",
-                    "offset": 4096,
-                    "size": 2468
+                    "offset": 131072,
+                    "size": 2357
                 }
             }
         },
@@ -38,13 +38,13 @@
             "destination": {
                 "bank_a": {
                     "path": "./mtd_a",
-                    "offset": 8192,
-                    "size": 3831
+                    "offset": 135168,
+                    "size": 1048351
                 },
                 "bank_b": {
                     "path": "./mtd_b",
-                    "offset": 8192,
-                    "size": 3831
+                    "offset": 135168,
+                    "size": 1048351
                 }
             }
         },
@@ -54,13 +54,13 @@
             "destination": {
                 "bank_a": {
                     "path": "./mmcblk_a",
-                    "offset": 12288,
-                    "size": 2510
+                    "offset": 1183744,
+                    "size": 65114
                 },
                 "bank_b": {
                     "path": "./mmcblk_b",
-                    "offset": 12288,
-                    "size": 2510
+                    "offset": 1183744,
+                    "size": 65114
                 }
             }
         },
@@ -70,13 +70,13 @@
             "destination": {
                 "bank_a": {
                     "path": "./mtd_a",
-                    "offset": 16384,
-                    "size": 3844
+                    "offset": 1249280,
+                    "size": 16777035
                 },
                 "bank_b": {
                     "path": "./mtd_b",
-                    "offset": 16384,
-                    "size": 3844
+                    "offset": 1249280,
+                    "size": 16777035
                 }
             }
         },
@@ -85,14 +85,14 @@
             "id": "FD06",
             "destination": {
                 "bank_a": {
-                    "path": "./mtd_a",
-                    "offset": 20480,
-                    "size": 1429
+                    "path": "./mmcblk_a",
+                    "offset": 18026496,
+                    "size": 1274
                 },
                 "bank_b": {
-                    "path": "./mtd_b",
-                    "offset": 20480,
-                    "size": 1429
+                    "path": "./mmcblk_b",
+                    "offset": 18026496,
+                    "size": 1274
                 }
             }
         },
@@ -101,14 +101,14 @@
             "id": "FD07",
             "destination": {
                 "bank_a": {
-                    "path": "./mmcblk_a",
-                    "offset": 24576,
-                    "size": 985
+                    "path": "./mtd_a",
+                    "offset": 18030592,
+                    "size": 65424
                 },
                 "bank_b": {
-                    "path": "./mmcblk_b",
-                    "offset": 24576,
-                    "size": 985
+                    "path": "./mtd_b",
+                    "offset": 18030592,
+                    "size": 65424
                 }
             }
         },
@@ -117,14 +117,14 @@
             "id": "FD08",
             "destination": {
                 "bank_a": {
-                    "path": "./mtd_a",
-                    "offset": 28672,
-                    "size": 4233
+                    "path": "./mmcblk_a",
+                    "offset": 18096128,
+                    "size": 327535
                 },
                 "bank_b": {
-                    "path": "./mtd_b",
-                    "offset": 28672,
-                    "size": 4233
+                    "path": "./mmcblk_b",
+                    "offset": 18096128,
+                    "size": 327535
                 }
             }
         },
@@ -134,13 +134,13 @@
             "destination": {
                 "bank_a": {
                     "path": "./mtd_a",
-                    "offset": 32768,
-                    "size": 727
+                    "offset": 18423808,
+                    "size": 327425
                 },
                 "bank_b": {
                     "path": "./mtd_b",
-                    "offset": 32768,
-                    "size": 727
+                    "offset": 18423808,
+                    "size": 327425
                 }
             }
         }
